@@ -42,7 +42,7 @@ LdapClient.create(config).then(client => {
 
 	// Create new user
 	client.set_user('tevaum', { 
-		cn: 'Estêvão, sn: 'Procópio Amaral',
+		cn: 'Estêvão', sn: 'Procópio Amaral',
 		givenName: 'Samuel',
 		mail: 'tevaum@universe.com'
 	}).then(() => console.log('User added!'));
