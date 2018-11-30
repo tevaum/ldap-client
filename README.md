@@ -1,7 +1,7 @@
 ldap-client
 ===========
 
-A LDAP client that lets you use abstraction to access LDAP data.
+A LDAP client that allows you to use abstractions to access LDAP data.
 
 Usage
 -----
@@ -27,7 +27,8 @@ LdapClient.create(config).then(client => {
 		scope: 'one',
 		filter: 'objectClass=inetOrgPerson',
 		key_field: 'uid' // the field used in rdn of the tree
-		attributes: [ 'uid', 'cn', 'sn', 'givenName', 'mail', 'memberOf' ] // if not specified, all attributes (excluding system ones) are retrieved
+		attributes: [ 'uid', 'cn', 'sn', 'givenName', 'mail', 'memberOf' ] 
+		// if attributes is not specified, all attributes (excluding system ones) are retrieved
 	})
 	
 	// Retrieve a specific user
@@ -40,7 +41,11 @@ LdapClient.create(config).then(client => {
 	client.set_user('tesla', { mail: 'tesla@universe.com' }).then(() => console.log('User updated!');
 
 	// Create new user
-	client.set_user('tevaum', { cn: 'Estêvão, sn: 'Procópio Amaral', givenName: 'Samuel', mail: 'tevaum@universe.com' }).then(() => console.log('User added!');
+	client.set_user('tevaum', { 
+		cn: 'Estêvão, sn: 'Procópio Amaral',
+		givenName: 'Samuel',
+		mail: 'tevaum@universe.com'
+	}).then(() => console.log('User added!'));
 });
 ```
 
