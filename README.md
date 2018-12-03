@@ -1,7 +1,7 @@
 ldap-client
 ===========
 
-A LDAP client that allows you to use abstractions to access LDAP data.
+A LDAP client that allows you to use type abstractions to access LDAP data.
 
 Usage
 -----
@@ -41,9 +41,10 @@ LdapClient.create(config).then(client => {
 	client.set_user('tesla', { mail: 'tesla@universe.com' }).then(() => console.log('User updated!');
 
 	// Create new user
-	client.set_user('tevaum', { 
+	client.add_user('tevaum', { 
 		cn: 'Estêvão', sn: 'Procópio Amaral',
 		givenName: 'Samuel',
+		uid: 'tevaum',
 		mail: 'tevaum@universe.com'
 	}).then(() => console.log('User added!'));
 });
