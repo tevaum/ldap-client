@@ -4,7 +4,7 @@ import escape from 'ldap-escape';
 
 import jws from 'jsonwebtoken';
 
-const LdapClient = stampit.init(function LdapClient({ldap}, { stamp }) {
+const LdapClient = stampit.init(function LdapClient({ ldap }, { stamp }) {
     let client = null;
 
     if (stamp.compose.configuration && stamp.compose.configuration.client)
@@ -42,7 +42,7 @@ const LdapClient = stampit.init(function LdapClient({ldap}, { stamp }) {
             if (err)
 		err.name == 'InvalidCredentialsError' ? resolve(false) : reject(err);
             else
-		client.bind(ldap.bind.dn, ldap.bind.pw, () => resolve(true));
+		resolve(true);
         });
     });
 
@@ -114,10 +114,15 @@ const LdapClient = stampit.init(function LdapClient({ldap}, { stamp }) {
     create: ({ ldap: { url, bind } }) => new Promise((resolve, reject) => {
         const client = ldapjs.createClient({ url });
 
-        const ConfiguredClient = LdapClient.conf({client});
+        const ConfiguredClient = LdapClient.conf({client}).compose(stampit.methods({
+            rebind() {
+                return this.bind(bind.dn, bind.pw);
+            }
+        }));
 
         const ClientInstance = ConfiguredClient();
-        ClientInstance.bind(bind.dn, bind.pw)
+
+        ClientInstance.rebind()
             .then(() => resolve(ClientInstance))
             .catch(reject);
     })
