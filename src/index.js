@@ -42,7 +42,7 @@ const LdapClient = stampit.init(function LdapClient({ldap}, { stamp }) {
             if (err)
 		err.name == 'InvalidCredentialsError' ? resolve(false) : reject(err);
             else
-                resolve(true);
+		client.bind(ldap.bind.dn, ldap.bind.pw, () => resolve(true));
         });
     });
 
