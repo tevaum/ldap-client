@@ -74,6 +74,21 @@ describe('Testing LdapClient with ldap.forumsys.com', () => {
         assert.equal(typeof client.set_account, 'function');
     });
 
+    it('Should get an account by uidNumber', () => client
+       .find_accounts({ uidNumber: 88888, gidNumber: 99999 })
+       .then(user => assert.deepStrictEqual(user, [{
+	   dn: 'uid=tesla,dc=example,dc=com',
+	   uid: 'tesla',
+	   sn: 'Tesla',
+	   cn: 'Nikola Tesla',
+	   mail: 'tesla@ldap.forumsys.com',
+	   uidNumber: '88888',
+	   gidNumber: '99999',
+	   homeDirectory: 'home',
+	   objectClass: [ 'inetOrgPerson', 'organizationalPerson', 'person', 'top', 'posixAccount' ],
+	   controls: []
+       }])));
+
     it('Should get tesla info', () => client.get_account('tesla').then(account => assert.equal(account.uid, 'tesla')));
 
     it('Should list all accounts', async () => {
@@ -108,6 +123,6 @@ describe('Testing LdapClient with ldap.forumsys.com', () => {
 
     it('Should try to bind witn an invalid user', () => client.bind('uid=estevao,dc=example,dc=org', 'password').then(result => assert.equal(result, false)));
 
-    it('Should get all accounts from cache', () => client.all_accounts().then(accounts => assert.equal(accounts.length, 17)));9
+    it('Should get all accounts from cache', () => client.all_accounts().then(accounts => assert.equal(accounts.length, 17)));
 
 });

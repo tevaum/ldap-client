@@ -1,6 +1,6 @@
 {
   "name": "ldap",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Library to abstract LDAP access",
   "main": "dist/index.js",
   "scripts": {

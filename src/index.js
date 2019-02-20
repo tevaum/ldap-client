@@ -68,6 +68,7 @@ const LdapClient = stampit.init(function LdapClient({ ldap }, { stamp }) {
         const one = `get_${name.singular}`;
         const add = `add_${name.singular}`;
         const set = `set_${name.singular}`;
+	const find = `find_${name.plural}`;
 
         this[all] = () => {
             if (Object.prototype.hasOwnProperty.call(type_cache, name.plural)) {
@@ -107,7 +108,28 @@ const LdapClient = stampit.init(function LdapClient({ ldap }, { stamp }) {
 
             client.modify(dn, change, err => err ? reject(err) : resolve());
         });
-};
+
+        this[find] = filter_object => {
+	    if (Object.prototype.hasOwnProperty.call(type_cache, name.plural)) {
+                // console.log('Cache Age:', Date.now() - type_cache[name.plural].updated, 2*60*1000);
+		if ((Date.now() - type_cache[name.plural].updated) < 2*60*1000) {
+		    return Promise.resolve(type_cache[name.plural].data.filter_object(item => {
+			// Check if item has all properties of filter with the same value
+			const result = Object.keys(filter_object).reduce((val, prop) => {
+			    return val && (item.hasOwnProperty(prop) && item[prop] == filter_object[prop]);
+			}, true);
+
+			return result;
+		    }))
+		}
+	    }
+
+	    const filter = '(&' + Object.keys(filter_object).map(prop => `(${prop}=${filter_object[prop]})`).join('') + ')';
+
+	    return this
+		.search(base, { filter, attributes, scope: scope || 'sub' });
+	}
+    };
 
     this.disconnect = () => client.destroy();
 }).statics({
