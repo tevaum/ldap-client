@@ -29,6 +29,7 @@
   "dependencies": {
     "@stamp/it": "^1.0.3",
     "ldap-escape": "^2.0.0",
-    "ldapjs": "^1.0.2"
+    "ldapjs": "^1.0.2",
+    "ldapts": "^1.6.0"
   }
 }

@@ -1,66 +1,32 @@
 import stampit from '@stamp/it';
-import ldapjs from 'ldapjs';
-import escape from 'ldap-escape';
-
-import jws from 'jsonwebtoken';
+import { Client }  from 'ldapts';
+import { Change }  from 'ldapts/dist/Change';
+import { Attribute }  from 'ldapts/dist/Attribute';
 
 const LdapClient = stampit.init(function LdapClient({ ldap }, { stamp }) {
-    let client = null;
-
-    if (stamp.compose.configuration && stamp.compose.configuration.client)
-        client = stamp.compose.configuration.client;
-    else {
-        client = ldapjs.createClient({ url: ldap.url });
-
-        client.bind(ldap.bind.dn, ldap.bind.pw, (err) => {
-            if (err) throw err;
-        });
-    }
+    let client = stamp.compose.configuration.client;
 
     const type_cache = {};
 
-    this.search = (base, opts) => {
-        // if (opts.filter) opts.filter = escape.filter`${opts.filter}`;
+    this.search = (base, opts) => client.search(base, opts).then(({ searchEntries }) => searchEntries);
 
-        const result = [];
-        return new Promise((resolve, reject) => {
-            client.search(base, opts, (err, response) => {
-                if (err) {
-                    reject(err);
-                    return;
-                }
+    this.bind = (dn, password) => client.bind(dn, password);
 
-                response.on('searchEntry', entry => result.push(entry.object));
-                response.on('error', ierr => reject(ierr));
-                response.on('end', () => resolve(result));
-            });
-        });
-    };
-
-    this.bind = (dn, password) => new Promise((resolve, reject) => {
-        client.bind(dn, password, err => {
-            if (err)
-		err.name == 'InvalidCredentialsError' ? resolve(false) : reject(err);
-            else
-		resolve(true);
-        });
-    });
-
-    this.add = ({ attrs, meta: { rdn, base } }) => new Promise((resolve, reject) => {
+    this.add = ({ attrs, meta: { rdn, base } }) => {
         if (!rdn) throw new Error('You must inform "meta.rdn" to add an entry to the ldap server');
         if (!attrs.objectClass) throw new Error('Your object must contain "objectClass" to add an entry to the ldap server');
 
-        const dn = /*escape.dn*/`${rdn}=${attrs[rdn]},${base}`;
+        const dn = `${rdn}=${attrs[rdn]},${base}`;
 
-        client.add(dn, attrs, err => err ? reject(err) : resolve());
-    });
+        return client.add(dn, attrs);
+    };
 
     this.get = (dn, {attributes = '*'}={}) => {
         let parts = dn.split(',');
         let filter = parts.shift();
         let base = parts.join(',');
 
-        return this.search(base, {scope: 'one', filter, attributes}).then(data => data.shift());
+        return this.search(base, {scope: 'one', filter, attributes}).then(entries => entries.shift());
     };
 
     this.register = ({ name, base, scope, filter, attributes, key_field }) => {
@@ -99,21 +65,24 @@ const LdapClient = stampit.init(function LdapClient({ ldap }, { stamp }) {
         // this[add] = ({ attrs, meta }) => this.add({ attrs, meta: Object.assign({}, meta, { base }) });
 	this[add] = (id, attributes) => this.add({ attrs: attributes, meta: { rdn: key_field, base } });
 
-        this[set] = (id, attributes) => new Promise((resolve, reject) => {
+        this[set] = (id, attributes) => {
             const dn = id.indexOf(base) > -1 ? id : `${key_field}=${id},${base}`;
-            const change = new ldapjs.Change({
-                operation: 'replace',
-                modification: attributes
-            });
+            const changes = Object.keys(attributes).map(type => new Change({
+		operation: 'replace',
+		modification: new Attribute({
+		    type,
+		    values: attributes[type] instanceof Array ? attributes[type] : [attributes[type]]
+		})
+	    }));
 
-            client.modify(dn, change, err => err ? reject(err) : resolve());
-        });
+            return client.modify(dn, changes);
+        };
 
         this[find] = filter_object => {
 	    if (Object.prototype.hasOwnProperty.call(type_cache, name.plural)) {
                 // console.log('Cache Age:', Date.now() - type_cache[name.plural].updated, 2*60*1000);
 		if ((Date.now() - type_cache[name.plural].updated) < 2*60*1000) {
-		    return Promise.resolve(type_cache[name.plural].data.filter_object(item => {
+		    return Promise.resolve(type_cache[name.plural].data.filter(item => {
 			// Check if item has all properties of filter with the same value
 			const result = Object.keys(filter_object).reduce((val, prop) => {
 			    return val && (item.hasOwnProperty(prop) && item[prop] == filter_object[prop]);
@@ -131,10 +100,10 @@ const LdapClient = stampit.init(function LdapClient({ ldap }, { stamp }) {
 	}
     };
 
-    this.disconnect = () => client.destroy();
+    this.disconnect = () => client.unbind();
 }).statics({
-    create: ({ ldap: { url, bind } }) => new Promise((resolve, reject) => {
-        const client = ldapjs.createClient({ url });
+    create: ({ ldap: { url, bind } }) => {
+        const client = new Client({ url });
 
         const ConfiguredClient = LdapClient.conf({client}).compose(stampit.methods({
             rebind() {
@@ -144,10 +113,8 @@ const LdapClient = stampit.init(function LdapClient({ ldap }, { stamp }) {
 
         const ClientInstance = ConfiguredClient();
 
-        ClientInstance.rebind()
-            .then(() => resolve(ClientInstance))
-            .catch(reject);
-    })
+        return ClientInstance.rebind().then(() => ClientInstance);
+    }
 });
 
 export default LdapClient;

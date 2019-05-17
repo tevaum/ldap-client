@@ -33,8 +33,7 @@ describe('Testing LdapClient with ldap.forumsys.com', () => {
 	   uidNumber: '88888',
 	   gidNumber: '99999',
 	   homeDirectory: 'home',
-	   objectClass: [ 'inetOrgPerson', 'organizationalPerson', 'person', 'top', 'posixAccount' ],
-	   controls: []
+	   objectClass: [ 'inetOrgPerson', 'organizationalPerson', 'person', 'top', 'posixAccount' ]
        })));
 
     it('Should directly search a scientist by uid', () => {
@@ -47,7 +46,6 @@ describe('Testing LdapClient with ldap.forumsys.com', () => {
 		let user = result.shift();
 		assert.deepStrictEqual(user, {
 		    dn: 'uid=einstein,dc=example,dc=com',
-		    controls: [],
 		    objectClass: [ 'inetOrgPerson', 'organizationalPerson', 'person', 'top' ],
 		    cn: 'Albert Einstein',
 		    sn: 'Einstein',
@@ -72,6 +70,7 @@ describe('Testing LdapClient with ldap.forumsys.com', () => {
         assert.equal(typeof client.get_account, 'function');
         assert.equal(typeof client.add_account, 'function');
         assert.equal(typeof client.set_account, 'function');
+        assert.equal(typeof client.find_accounts, 'function');
     });
 
     it('Should get an account by uidNumber', () => client
@@ -85,8 +84,7 @@ describe('Testing LdapClient with ldap.forumsys.com', () => {
 	   uidNumber: '88888',
 	   gidNumber: '99999',
 	   homeDirectory: 'home',
-	   objectClass: [ 'inetOrgPerson', 'organizationalPerson', 'person', 'top', 'posixAccount' ],
-	   controls: []
+	   objectClass: [ 'inetOrgPerson', 'organizationalPerson', 'person', 'top', 'posixAccount' ]
        }])));
 
     it('Should get tesla info', () => client.get_account('tesla').then(account => assert.equal(account.uid, 'tesla')));
@@ -96,13 +94,26 @@ describe('Testing LdapClient with ldap.forumsys.com', () => {
 	assert.equal(accounts.length, 17);
     });
 
+    it('Should retrieve tesla from cache', () => client
+       .find_accounts({ uidNumber: 88888, gidNumber: 99999 })
+       .then(user => assert.deepStrictEqual(user, [{
+	   dn: 'uid=tesla,dc=example,dc=com',
+	   uid: 'tesla',
+	   sn: 'Tesla',
+	   cn: 'Nikola Tesla',
+	   mail: 'tesla@ldap.forumsys.com',
+	   uidNumber: '88888',
+	   gidNumber: '99999',
+	   homeDirectory: 'home',
+	   objectClass: [ 'inetOrgPerson', 'organizationalPerson', 'person', 'top', 'posixAccount' ]
+       }])));
+
     it('Should get riemann info', () => client
        .get_account('riemann')
        .then(mathpro => assert.deepStrictEqual(mathpro, {
            cn: 'Bernhard Riemann',
 	   sn: 'Riemann',
 	   uid: 'riemann',
-           controls: [],
            dn: 'uid=riemann,dc=example,dc=com',
            mail: 'riemann@ldap.forumsys.com',
            objectClass: [
@@ -115,13 +126,26 @@ describe('Testing LdapClient with ldap.forumsys.com', () => {
 
     it('Should try to change riemann email', () => client
        .set_account('riemann', { mail: 'riemann@welovemaths.com' })
-       .catch(err => assert.equal(err.name, 'InsufficientAccessRightsError')));
+       .catch(err => {
+	   assert.equal(err.name, 'Error');
+	   assert.equal(err.code, 0x32);
+	   assert.equal(err.message, 'The caller does not have sufficient rights to perform the requested operation. Code: 0x32');
+       }))
 
     it('Should try to add a new user', () => client
        .add_account('estevao', { cn: 'Estêvão', sn: 'Amaral', mail: 'estevao@ldap.forumsys.com', objectClass: [ 'inetOrgPerson' ] })
-       .catch(err => assert.equal(err.name, 'InsufficientAccessRightsError')))
+       .catch(err => {
+	   assert.equal(err.name, 'Error');
+	   assert.equal(err.code, 0x32);
+	   assert.equal(err.message, 'The caller does not have sufficient rights to perform the requested operation. Code: 0x32');
+       }))
 
-    it('Should try to bind witn an invalid user', () => client.bind('uid=estevao,dc=example,dc=org', 'password').then(result => assert.equal(result, false)));
+    it('Should try to bind witn an invalid user', () => client.bind('uid=estevao,dc=example,dc=org', 'password')
+       .catch(err => {
+	   assert.equal(err.name, 'Error');
+	   assert.equal(err.code, 0x31);
+	   assert.equal(err.message, 'Invalid credentials during a bind operation. Code: 0x31');
+       }));
 
     it('Should get all accounts from cache', () => client.all_accounts().then(accounts => assert.equal(accounts.length, 17)));
 
