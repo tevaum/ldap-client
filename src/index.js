@@ -10,7 +10,15 @@ const LdapClient = stampit.init(function LdapClient({ ldap }, { stamp }) {
 
     this.search = (base, opts) => client.search(base, opts).then(({ searchEntries }) => searchEntries);
 
-    this.bind = (dn, password) => client.bind(dn, password);
+    this.bind = (dn, password) => client.bind(dn, password)
+	.then(() => return true)
+	.catch(err => {
+	    if (err typeof InvalidCredentialsError)
+		return false;
+
+	    throw err;
+	});
+    }
 
     this.add = ({ attrs, meta: { rdn, base } }) => {
         if (!rdn) throw new Error('You must inform "meta.rdn" to add an entry to the ldap server');
