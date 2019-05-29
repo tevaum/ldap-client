@@ -14,7 +14,10 @@ const LdapClient = stampit.init(function LdapClient({ ldap }, { stamp }) {
 	.then(() => true)
 	.catch(err => {
 	    if (err.code == 0x31) // InvalidCredentialsError
+	    {
+		if (process.env.DEBUG) console.log('[Debug:InvalidCreds]', err);
 		return false;
+	    }
 
 	    throw err;
 	});
