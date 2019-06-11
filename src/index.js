@@ -1,7 +1,7 @@
 import stampit from '@stamp/it';
 import { Client }  from 'ldapts';
-import { Change }  from 'ldapts/dist/Change';
-import { Attribute }  from 'ldapts/dist/Attribute';
+import { Change } from 'ldapts/Change';
+import { Attribute }  from 'ldapts/Attribute';
 
 const LdapClient = stampit.init(function LdapClient({ ldap }, { stamp }) {
     let client = stamp.compose.configuration.client;
