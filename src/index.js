@@ -31,6 +31,38 @@ const LdapClient = stampit.init(function LdapClient({ ldap }, { stamp }) {
         return client.add(dn, attrs);
     };
 
+    this.addAttributes = ({ attrs, meta: { rdn, base } }) => {
+        if (!rdn) throw new Error('You must inform "meta.rdn" to add an entry to the ldap server');
+
+        const dn = `${rdn}=${attrs[rdn]},${base}`;
+
+        const changes = Object.keys(attrs).map(type => new Change({
+	    operation: 'add',
+	    modification: new Attribute({
+		type,
+		values: attrs[type] instanceof Array ? attrs[type] : [attrs[type]]
+	    })
+	}));
+
+        return client.modify(dn, changes);
+    };
+
+    this.removeAttributes = ({ attrs, meta: { rdn,base } }) => {
+        if (!rdn) throw new Error('You must inform "meta.rdn" to add an entry to the ldap server');
+
+        const dn = `${rdn}=${attrs[rdn]},${base}`;
+
+        const changes = Object.keys(attrs).map(type => new Change({
+	    operation: 'delete',
+	    modification: new Attribute({
+		type,
+		values: attrs[type] instanceof Array ? attrs[type] : [attrs[type]]
+	    })
+	}));
+
+        return client.modify(dn, changes);
+    }
+
     this.get = (dn, {attributes = '*'}={}) => {
         let parts = dn.split(',');
         let filter = parts.shift();
@@ -45,6 +77,8 @@ const LdapClient = stampit.init(function LdapClient({ ldap }, { stamp }) {
         const add = `add_${name.singular}`;
         const set = `set_${name.singular}`;
 	const find = `find_${name.plural}`;
+	const addAttr = 'add_attributes';
+	const delAttr = 'del_attributes';
 
         this[all] = () => {
             if (Object.prototype.hasOwnProperty.call(type_cache, name.plural)) {
@@ -74,6 +108,9 @@ const LdapClient = stampit.init(function LdapClient({ ldap }, { stamp }) {
 
         // this[add] = ({ attrs, meta }) => this.add({ attrs, meta: Object.assign({}, meta, { base }) });
 	this[add] = (id, attributes) => this.add({ attrs: attributes, meta: { rdn: key_field, base } });
+
+	this[addAttr] = (id, attributes) => this.addAttributes({ attrs: { [key_field]: id, ...attributes }, meta: { rdn: key_field, base } });
+	this[delAttr] = (id, attributes) => this.delAttributes({ attrs: { [key_field]: id, ...attributes }, meta: { rdn: key_field, base } });
 
         this[set] = (id, attributes) => {
             const dn = id.indexOf(base) > -1 ? id : `${key_field}=${id},${base}`;

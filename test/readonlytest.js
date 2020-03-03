@@ -124,6 +124,22 @@ describe('Testing LdapClient with ldap.forumsys.com', () => {
            ]
        })));
 
+    it('Should try to add givenName attribute to riemann', () => client
+       .add_attributes('riemann', { givenName: 'Riemann' })
+       .catch(err => {
+	   assert.equal(err.name, 'Error');
+	   assert.equal(err.code, 0x32);
+	   assert.equal(err.message, 'The caller does not have sufficient rights to perform the requested operation. Code: 0x32');
+       }));
+
+    it('Should try to delete riemann\'s cn attribute', () => client
+       .add_attributes('riemann', { givenName: 'Riemann' })
+       .catch(err => {
+	   assert.equal(err.name, 'Error');
+	   assert.equal(err.code, 0x32);
+	   assert.equal(err.message, 'The caller does not have sufficient rights to perform the requested operation. Code: 0x32');
+       }));
+
     it('Should try to change riemann email', () => client
        .set_account('riemann', { mail: 'riemann@welovemaths.com' })
        .catch(err => {

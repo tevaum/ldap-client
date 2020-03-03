@@ -7,7 +7,7 @@
     "prepare": "yarn run build",
     "prebuild": "echo eslint src",
     "build": "babel src -d dist",
-    "test": "nyc mocha --require babel-core/register",
+    "test": "nyc mocha --timeout=7000 --require babel-core/register",
     "pretest": "yarn run build"
   },
   "author": "Estêvão Samuel Procópio Amaral <tevaum@gmail.com>",
