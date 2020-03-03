@@ -77,8 +77,8 @@ const LdapClient = stampit.init(function LdapClient({ ldap }, { stamp }) {
         const add = `add_${name.singular}`;
         const set = `set_${name.singular}`;
 	const find = `find_${name.plural}`;
-	const addAttr = 'add_attributes';
-	const delAttr = 'del_attributes';
+	const addAttr = `add_${name.singular}_attributes`;
+	const delAttr = 'del_${name.singular}_attributes';
 
         this[all] = () => {
             if (Object.prototype.hasOwnProperty.call(type_cache, name.plural)) {

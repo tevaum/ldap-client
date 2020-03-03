@@ -125,7 +125,7 @@ describe('Testing LdapClient with ldap.forumsys.com', () => {
        })));
 
     it('Should try to add givenName attribute to riemann', () => client
-       .add_attributes('riemann', { givenName: 'Riemann' })
+       .add_account_attributes('riemann', { givenName: 'Riemann' })
        .catch(err => {
 	   assert.equal(err.name, 'Error');
 	   assert.equal(err.code, 0x32);
@@ -133,7 +133,7 @@ describe('Testing LdapClient with ldap.forumsys.com', () => {
        }));
 
     it('Should try to delete riemann\'s cn attribute', () => client
-       .add_attributes('riemann', { givenName: 'Riemann' })
+       .del_account_attributes('riemann', { givenName: 'Riemann' })
        .catch(err => {
 	   assert.equal(err.name, 'Error');
 	   assert.equal(err.code, 0x32);
